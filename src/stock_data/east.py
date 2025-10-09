@@ -336,6 +336,133 @@ def get_ma60_stocks(page_no: int = 1, page_size: int = 50) -> Dict[str, Any]:
     return api.get_ma60_breakthrough_stocks(page_no, page_size)
 
 
+def _to_float(val: Any) -> Optional[float]:
+    """Best-effort float conversion from numbers or numeric-like strings.
+
+    Returns None if conversion is not possible.
+    """
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    if not isinstance(val, str):
+        return None
+    s = val.strip()
+    if not s or s in {"-", "N/A", "nan", "NaN"}:
+        return None
+    # Keep digits, minus and dot; drop units like "亿" etc.
+    import re
+
+    cleaned = "".join(re.findall(r"[-0-9.]", s))
+    if cleaned in {"", "-", ".", "-.", "-.", ".."}:
+        return None
+    try:
+        return float(cleaned)
+    except Exception:
+        return None
+
+
+def _to_int(val: Any) -> Optional[int]:
+    f = _to_float(val)
+    return int(f) if f is not None else None
+
+
+def _split_first_number(pipe_value: Any) -> Optional[float]:
+    """Extract number before '|' if present, else parse directly."""
+    if isinstance(pipe_value, str) and "|" in pipe_value:
+        head = pipe_value.split("|", 1)[0]
+        return _to_float(head)
+    return _to_float(pipe_value)
+
+
+def get_ma60_stocks_structured(
+    page_no: int = 1, page_size: int = 50
+) -> "StockScanResult":
+    """
+    获取结构化的 MA60 突破选股结果（Pydantic 模型）。
+
+    功能等同于 `get_ma60_stocks`，但返回 `StockScanResult`，其中包含
+    标准化字段与类型，便于上层消费与序列化。
+    """
+    # 延迟导入以支持直接运行此文件 (__main__) 时的路径问题
+    try:
+        from schema.stock import StockItem, StockScanResult  # type: ignore
+    except ModuleNotFoundError:
+        import os
+        import sys
+
+        sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+        from schema.stock import StockItem, StockScanResult  # type: ignore
+
+    api = EastMoneyAPI()
+    raw = api.get_ma60_breakthrough_stocks(page_no, page_size)
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    k_ma60 = f"60日JX{{{today}}}"
+    k_pe_ttm = f"PETTM{{{today}}}"
+    k_roe = f"ROE_WEIGHT{{{today}}}"
+    k_rank_change = f"RANK_CHANGE{{{today}}}"
+    k_guba_top = f"GUBA_TOP{{{today}}}"
+
+    data = raw.get("data") or {}
+    result = data.get("result") or {}
+    items = result.get("dataList") or []
+    meta_total = (result.get("meta") or {}).get("total")
+    total = int(meta_total) if isinstance(meta_total, (int, float)) else int(len(items))
+
+    structured_items: List[StockItem] = []
+    for it in items:
+        code = it.get("SECURITY_CODE", "")
+        market = it.get("MARKET_SHORT_NAME", "")
+        name = it.get("SECURITY_SHORT_NAME", "")
+
+        price = _to_float(it.get("NEWEST_PRICE"))
+        ma60 = _to_float(it.get(k_ma60))
+        chg = _to_float(it.get("CHG"))
+
+        # Market cap often comes with units (e.g., "1234亿"). Convert to billions.
+        # We already strip non-numeric, assume the number is billions.
+        market_cap_billion = _to_float(it.get("TOAL_MARKET_VALUE<140>"))
+
+        pe_dynamic = _to_float(it.get("PE_DYNAMIC"))
+        pe_ttm = _to_float(it.get(k_pe_ttm))
+        pb = _to_float(it.get("PB"))
+        roe = _split_first_number(it.get(k_roe))
+
+        turnover_rate = _to_float(it.get("TURNOVER_RATE"))
+        qrr = _to_float(it.get("QRR"))
+        popularity_rank_change = _to_int(it.get(k_rank_change))
+        guba_top_rank = _to_int(it.get(k_guba_top))
+
+        structured_items.append(
+            StockItem(
+                code=code,
+                market=market,
+                name=name,
+                price=price,
+                ma60=ma60,
+                change_pct=chg,
+                market_cap_billion=market_cap_billion,
+                pe_dynamic=pe_dynamic,
+                pe_ttm=pe_ttm,
+                pb=pb,
+                roe=roe,
+                turnover_rate=turnover_rate,
+                qrr=qrr,
+                popularity_rank_change=popularity_rank_change,
+                guba_top_rank=guba_top_rank,
+            )
+        )
+
+    return StockScanResult(
+        as_of_date=today,
+        total=total,
+        page_no=page_no,
+        page_size=page_size,
+        items=structured_items,
+    )
+
+
 # ============================================================================
 # 主程序入口
 # ============================================================================
@@ -345,53 +472,31 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     try:
-        print("正在获取MA60突破策略股票...")
-        result = get_ma60_stocks(page_no=1, page_size=10)
+        print("正在获取MA60突破策略股票（结构化）...")
+        result = get_ma60_stocks_structured(page_no=1, page_size=10)
 
-        print("请求成功!")
-        print(f"返回数据键: {list(result.keys())}")
-        today = datetime.now().strftime("%Y-%m-%d")
-        print(f"今天日期: {today}")
-        print(f"ROE_WEIGHT{{{today}}}")
+        print("请求成功!\n")
+        print(
+            f"日期: {result.as_of_date} | 总数: {result.total} | 页码: {result.page_no} | 页大小: {result.page_size}"
+        )
+        print("=" * 60)
 
-        # 如果有股票数据，显示前几只
-        if "data" in result and result["data"]:
-            data = result["data"]
-            if (
-                isinstance(data, dict)
-                and "result" in data
-                and "dataList" in data["result"]
-            ):
-                stocks = data["result"]["dataList"]
-                total = data["result"].get("meta", {}).get("total", len(stocks))
-                print(f"\n找到 {total} 只符合MA60突破策略的股票:")
-                print("=" * 60)
-                for i, stock in enumerate(stocks[:], 1):  # 显示所有返回的股票
-                    code = stock.get("SECURITY_CODE", "N/A")
-                    market_shot_name = stock.get("MARKET_SHORT_NAME", "N/A")
-                    name = stock.get("SECURITY_SHORT_NAME", "N/A")
-                    price = stock.get("NEWEST_PRICE", "N/A")
-                    ma60 = stock.get(f"60日JX{{{today}}}", "N/A")
-                    chg = stock.get("CHG", "N/A")
-                    market_cap = stock.get("TOAL_MARKET_VALUE<140>", "N/A")
-                    pe_dynamic = stock.get("PE_DYNAMIC", "N/A")
-                    pe_ttm = stock.get(f"PETTM{{{today}}}", "N/A")
-                    pb = stock.get("PB", "N/A")
-                    # roe_date = stock.get(f"ROE_WEIGHT{{{today}}}&&DATE", "N/A")
-                    roe = stock.get(f"ROE_WEIGHT{{{today}}}", "N/A").split("|")[0]
-                    turnover_rate = stock.get("TURNOVER_RATE", "N/A")
-                    qrr = stock.get("QRR", "N/A") # 量比
-                    rrank_change = stock.get(f"RANK_CHANGE{{{today}}}", "N/A") # 人气排名变化
-                    guba_top = stock.get(f"GUBA_TOP{{{today}}}", "N/A") # 股吧人气排名
-                    print(
-                        f"{i:2d}. {code}.{market_shot_name} - {name:8s} | 价格:{price:>8s} | 涨幅:{chg:>6s}% | 市值:{market_cap:>10s} | MA60:{ma60:>8s} | PE_DYNAMIC:{pe_dynamic:>8s} | PE_TTM:{pe_ttm:>8s} | PB:{pb:>8s} | ROE:{roe:>8s} | 换手率:{turnover_rate:>8s} | 量比:{qrr:>8s} | 人气排名变化:{rrank_change:>8s} | 股吧人气排名:{guba_top:>8s}"
-                    )
-            else:
-                print(f"\n数据结构: {type(data)}")
-                if isinstance(data, dict):
-                    print(f"数据键: {list(data.keys())}")
-                else:
-                    print(f"数据内容: {data}")
+        def fmt(v: Any, nd: int = 2) -> str:
+            if v is None:
+                return "-"
+            if isinstance(v, (int, float)):
+                return f"{float(v):.{nd}f}"
+            return str(v)
+
+        for i, it in enumerate(result.items, 1):
+            print(
+                f"{i:2d}. {it.code}.{it.market} - {it.name:8s} | "
+                f"价格:{fmt(it.price):>8s} | 涨幅:{fmt(it.change_pct):>6s}% | 市值:{fmt(it.market_cap_billion):>8s}亿 | "
+                f"MA60:{fmt(it.ma60):>8s} | PE_DYNAMIC:{fmt(it.pe_dynamic):>8s} | PE_TTM:{fmt(it.pe_ttm):>8s} | PB:{fmt(it.pb):>6s} | "
+                f"ROE:{fmt(it.roe):>6s}% | 换手率:{fmt(it.turnover_rate):>6s}% | 量比:{fmt(it.qrr):>6s} | "
+                f"人气排名变化:{it.popularity_rank_change if it.popularity_rank_change is not None else '-':>4} | "
+                f"股吧人气排名:{it.guba_top_rank if it.guba_top_rank is not None else '-':>6}"
+            )
 
     except Exception as e:
         print(f"执行失败: {e}")
