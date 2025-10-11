@@ -1,6 +1,8 @@
 import asyncio
 import time
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Literal
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -32,6 +34,57 @@ class AgentState(MessagesState):
     stock_dict: dict[str, StockItem]
     stock_daily_items: dict[str, list[TushareDailyItem]] 
     stock_analysis_results: dict[str, str]
+
+
+def write_analysis_report(stock_code: str, stock_name: str, analysis_content: str) -> None:
+    """
+    将股票分析报告写入文件
+    
+    Args:
+        stock_code: 股票代码 (如 000001.SZ)
+        stock_name: 股票名称
+        analysis_content: 分析内容
+    """
+    try:
+        # 获取项目根目录
+        current_file = Path(__file__)
+        project_root = current_file.parent.parent.parent
+        
+        # 生成当前日期 (YYYYMMDD格式)
+        today = datetime.now().strftime("%Y%m%d")
+        
+        # 创建报告目录
+        report_dir = project_root / "report" / today
+        report_dir.mkdir(parents=True, exist_ok=True)
+        
+        # 生成文件路径
+        report_file = report_dir / f"{stock_code}.md"
+        
+        # 生成报告内容
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        report_content = f"""# {stock_name} ({stock_code}) 分析报告
+
+**分析时间**: {timestamp}
+
+## 股票基本信息
+- **股票代码**: {stock_code}
+- **股票名称**: {stock_name}
+
+## AI 分析结果
+
+{analysis_content}
+
+---
+*本报告由 AI 自动生成，仅供参考，不构成投资建议*
+"""
+        
+        # 写入文件 (覆盖模式)
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write(report_content)
+            
+    except Exception as e:
+        # 静默处理文件写入错误，不影响主流程
+        print(f"写入分析报告失败 {stock_code}: {str(e)}")
 
 
 
@@ -149,6 +202,10 @@ async def analyze_single_stock(
         hidden_config = config.copy() if config else {}
         hidden_config["tags"] = hidden_config.get("tags", []) + ["skip_stream"]
         response = await model.ainvoke([HumanMessage(content=prompt)], hidden_config)
+
+        # 写入分析报告文件
+        task.write_data(data={"status": "正在写入分析报告..."})
+        write_analysis_report(stock_code, stock_info.name, response.content)
         
         # 完成任务
         # result_summary = response.content[:100] + "..." if len(response.content) > 100 else response.content
@@ -162,6 +219,8 @@ async def analyze_single_stock(
                 # "full_analysis": response.content
             }
         )
+        
+        
         
         return stock_code, response.content
         

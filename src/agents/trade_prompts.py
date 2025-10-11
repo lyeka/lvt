@@ -50,7 +50,7 @@ TRADE_PROMPTS["single_stock_llm_judge"] = """# 角色
   - n3（2B 反转最小 RR 门槛）：1
 
 # 输出
-- 将结果以markdown格式输出
+- 将结果以markdown格式输出, 不需要在 ```markdown ``` 中包裹
 
 
 # 生成规则（格式与风格）
@@ -71,7 +71,7 @@ TRADE_PROMPTS["compare_stock_analysis_results"] = """# 角色
 
 
 # 输出
-- 将结果以markdown格式输出
+- 将结果以markdown格式输出, 不需要在 ```markdown ``` 中包裹
 """
 
 TRADE_PROMPTS["single_stock_llm_judge_json_output"] = """# 角色
