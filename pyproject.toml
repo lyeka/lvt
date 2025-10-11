@@ -58,6 +58,14 @@ dependencies = [
     "langchain-mcp-adapters>=0.1.10",
     "tushare>=1.4.24",
     "streamlit-file-browser>=3.2.22",
+    "streamlit-searchbox>=0.1.23",
+    "wikipedia>=1.4.0",
+    "streamlit-shadcn-ui>=0.1.18",
+    "yfinance>=0.2.66",
+    "altair>=5.5.0",
+    "plotly>=5.17.0",
+    "pyecharts>=2.0.0",
+    "streamlit-echarts>=0.4.0",
 ]
 
 [dependency-groups]
