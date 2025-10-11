@@ -5,7 +5,6 @@ from .east import (
     get_ma60_stocks,
     get_ma60_stocks_structured,
 )
-from .tushare import TushareAPI, get_a_daily
 
 __all__ = [
     "EastMoneyAPI",
