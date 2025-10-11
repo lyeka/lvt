@@ -26,21 +26,21 @@ from stock_data.tushare_api import get_a_daily_structured
 
 # 页面配置
 st.set_page_config(
-    page_title="A股K线图表",
+    page_title="stock detail",
     page_icon="📈",
     layout="wide",
 )
 
-st.title("📈 A股K线图表")
-st.markdown("基于 TuShare 数据和 PyEcharts 的专业股票技术分析工具")
+# st.title("📈 A股K线图表")
+st.markdown("## Stock Detail")
 
 # 侧边栏配置
 with st.sidebar:
-    st.header("📊 图表配置")
+    st.header("📊 Display Options")
     
     # 股票代码输入
     stock_code = st.text_input(
-        "股票代码",
+        "Stock Code",
         value="000001.SZ",
         help="请输入TuShare格式的股票代码，如: 000001.SZ (深市) 或 600519.SH (沪市)",
         placeholder="例如: 000001.SZ"
@@ -48,20 +48,20 @@ with st.sidebar:
     
     # 时间范围选择
     time_range = st.selectbox(
-        "时间范围",
+        "Time Range",
         options=["最近30天", "最近60天", "最近90天", "最近180天", "最近1年"],
-        index=1,  # 默认选择60天
+        index=2,  # 默认选择90天
         help="选择要显示的历史数据时间范围"
     )
     
     # 图表选项
-    st.subheader("显示选项")
-    show_volume = st.checkbox("显示成交量", value=True)
-    show_ma = st.checkbox("显示移动平均线", value=True)
+    st.subheader("Show Options")
+    show_volume = st.checkbox("Show Volume", value=True)
+    show_ma = st.checkbox("Show Moving Average", value=True)
     
     if show_ma:
         ma_periods = st.multiselect(
-            "移动平均线周期",
+            "Moving Average Period",
             options=[5, 10, 20, 30, 60],
             default=[60],
             help="选择要显示的移动平均线周期"
@@ -145,7 +145,7 @@ def create_kline_chart(df: pd.DataFrame, stock_code: str, show_volume: bool = Tr
         )
         .set_global_opts(
             title_opts=opts.TitleOpts(
-                title=f"{stock_code} K线图",
+                title=f"{stock_code} Kline Chart",
                 pos_left="0"
             ),
             xaxis_opts=opts.AxisOpts(
@@ -263,7 +263,7 @@ def create_kline_chart(df: pd.DataFrame, stock_code: str, show_volume: bool = Tr
             .add(
                 volume_bar,
                 grid_opts=opts.GridOpts(
-                    pos_left="10%", pos_right="8%", pos_top="63%", height="16%"
+                    pos_left="10%", pos_right="8%", pos_top="70%", height="16%"
                 ),
             )
         )
@@ -278,13 +278,13 @@ if not validate_stock_code(stock_code):
     st.stop()
 
 # 显示当前配置
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("股票代码", stock_code)
-with col2:
-    st.metric("时间范围", time_range)
-with col3:
-    st.metric("数据源", "TuShare Pro")
+# col1, col2, col3 = st.columns(3)
+# with col1:
+#     st.metric("股票代码", stock_code)
+# with col2:
+#     st.metric("时间范围", time_range)
+# with col3:
+#     st.metric("数据源", "TuShare Pro")
 
 # 获取数据
 with st.spinner("正在获取股票数据..."):
@@ -334,38 +334,38 @@ if df.empty:
 if show_ma and 'ma_periods' in locals():
     df = calculate_moving_average(df, ma_periods)
 
-# 显示基本信息
-st.subheader("📊 股票基本信息")
-latest_data = df.iloc[-1]
-prev_data = df.iloc[-2] if len(df) > 1 else latest_data
+# # 显示基本信息
+# st.subheader("📊 股票基本信息")
+# latest_data = df.iloc[-1]
+# prev_data = df.iloc[-2] if len(df) > 1 else latest_data
 
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    price_change = latest_data['close'] - prev_data['close']
-    st.metric(
-        "最新价格", 
-        f"¥{latest_data['close']:.2f}",
-        delta=f"{price_change:.2f}"
-    )
-with col2:
-    st.metric(
-        "涨跌幅", 
-        f"{latest_data['pct_chg']:.2f}%",
-        delta=None
-    )
-with col3:
-    st.metric(
-        "成交量", 
-        f"{latest_data['vol']:.0f}手" if latest_data['vol'] else "N/A"
-    )
-with col4:
-    st.metric(
-        "成交额", 
-        f"{latest_data['amount']:.2f}万" if latest_data['amount'] else "N/A"
-    )
+# col1, col2, col3, col4 = st.columns(4)
+# with col1:
+#     price_change = latest_data['close'] - prev_data['close']
+#     st.metric(
+#         "最新价格", 
+#         f"¥{latest_data['close']:.2f}",
+#         delta=f"{price_change:.2f}"
+#     )
+# with col2:
+#     st.metric(
+#         "涨跌幅", 
+#         f"{latest_data['pct_chg']:.2f}%",
+#         delta=None
+#     )
+# with col3:
+#     st.metric(
+#         "成交量", 
+#         f"{latest_data['vol']:.0f}手" if latest_data['vol'] else "N/A"
+#     )
+# with col4:
+#     st.metric(
+#         "成交额", 
+#         f"{latest_data['amount']:.2f}万" if latest_data['amount'] else "N/A"
+#     )
 
 # 创建并显示图表
-st.subheader("📈 K线图表")
+# st.text("📈")
 
 try:
     chart = create_kline_chart(
@@ -400,17 +400,4 @@ if st.checkbox("显示原始数据"):
     st.dataframe(display_df, use_container_width=True)
 
 # 页脚信息
-st.markdown("---")
-st.markdown(
-    """
-    **数据说明:**
-    - 数据来源: TuShare Pro
-    - 图表引擎: PyEcharts (参考官方示例实现)
-    - 更新频率: 每日收盘后更新
-    - 缓存时间: 5分钟
-    - 仅供参考，不构成投资建议
-    
-    **参考链接:**
-    - [PyEcharts K线图官方示例](https://gallery.pyecharts.org/#/Candlestick/kline_datazoom_slider_position)
-    """
-)
+# st.markdown("---")
