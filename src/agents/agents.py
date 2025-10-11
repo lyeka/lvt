@@ -44,7 +44,7 @@ agents: dict[str, Agent] = {
     #     graph_like=rag_assistant,
     # ),
     # "command-agent": Agent(description="A command agent.", graph_like=command_agent),
-    # "bg-task-agent": Agent(description="A background task agent.", graph_like=bg_task_agent),
+    "bg-task-agent": Agent(description="A background task agent.", graph_like=bg_task_agent),
     # "langgraph-supervisor-agent": Agent(
     #     description="A langgraph supervisor agent", graph_like=langgraph_supervisor_agent
     # ),

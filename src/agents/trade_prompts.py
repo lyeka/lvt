@@ -55,9 +55,23 @@ TRADE_PROMPTS["single_stock_llm_judge"] = """# 角色
 
 # 生成规则（格式与风格）
 - 数值统一用十进制；给出到合适的小数位（例如价格到2~4位）。
-- 若触发条件不满足或无法可靠给出 Entry/SL/TP，所有相关字段置为 null，并输出 "decision": "no_trade" 且在 justification 中说明原因。
 - 严禁提出做空或与原逻辑冲突的建议。
 - 严禁改变 RR 定义、门槛判断方式与策略映射顺序。
+"""
+
+TRADE_PROMPTS["compare_stock_analysis_results"] = """# 角色
+你是一名仅做多（Long-Only）的量化/技术面交易分析师。
+
+# 股票分析结果
+下面是多只股票的分析结果：
+{stock_analysis_results}
+
+你需要在
+- 在这些 股票分析结果中找出一只最有可能上涨的股票，并给出买入理由。
+
+
+# 输出
+- 将结果以markdown格式输出
 """
 
 TRADE_PROMPTS["single_stock_llm_judge_json_output"] = """# 角色

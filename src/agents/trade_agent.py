@@ -1,12 +1,14 @@
-import random
+import asyncio
+import time
 from enum import Enum
 from typing import Literal
 
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, MessagesState, StateGraph
-from langgraph.types import Command
+from langgraph.types import Command, StreamWriter
 
+from agents.bg_task_agent.task import Task
 from agents.trade_prompts import TRADE_PROMPTS
 from core import get_model, settings
 from schema.stock import StockItem
@@ -76,8 +78,8 @@ def process_stock_items_node(state: AgentState, config: RunnableConfig) -> Comma
 
 
 
-async def judge_via_llm_node(state: AgentState, config: RunnableConfig):
-
+async def judge_via_llm_node(state: AgentState, config: RunnableConfig, writer: StreamWriter):
+    """使用后台任务并发分析多只股票"""
     stock_dict = state["stock_dict"]
     if not stock_dict:
         return Command(
@@ -85,31 +87,95 @@ async def judge_via_llm_node(state: AgentState, config: RunnableConfig):
             update={"messages": [AIMessage(content="No stock daily items")]}
         )
 
-    # for stock_item in stock_daily_items.keys():
-    #     prompt = build_single_stock_llm_judge_prompt(state, stock_item)
-    #     model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
-    #     response = await model.ainvoke([HumanMessage(content=prompt)])
+    # 创建并发任务列表
+    tasks = []
+    for stock_code in stock_dict.keys():
+        task = analyze_single_stock(state, stock_code, config, writer)
+        tasks.append(task)
+    
+    # 并发执行所有股票分析任务
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # 处理结果
     stock_analysis_results = {}
     messages = []
-    for stock_code in stock_dict.keys():
-      prompt = build_single_stock_llm_judge_prompt(state, stock_code)
-      model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
-      response = await model.ainvoke([HumanMessage(content=prompt)])
-      messages.append(AIMessage(content=response.content))
-      stock_analysis_results[stock_code] = response.content
-
+    successful_analyses = 0
+    failed_analyses = 0
     
-    # target_stock_code = list(stock_dict.keys())[random.randint(0, len(stock_dict.keys())-1)]
-    # prompt = build_single_stock_llm_judge_prompt(state, target_stock_code)
-    # model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
-    # response = await model.ainvoke([HumanMessage(content=prompt)])
-
+    for result in results:
+        if isinstance(result, Exception):
+            failed_analyses += 1
+            messages.append(AIMessage(content=f"股票分析出现异常: {str(result)}"))
+        else:
+            stock_code, analysis_content = result
+            stock_analysis_results[stock_code] = analysis_content
+            # messages.append(AIMessage(content=analysis_content))
+            if "分析失败" in analysis_content:
+                failed_analyses += 1
+            else:
+                successful_analyses += 1
+    
+    # 添加总结消息
+    summary_msg = f"股票分析完成: 成功 {successful_analyses} 只，失败 {failed_analyses} 只"
+    messages.append(AIMessage(content=summary_msg))
         
     return {
-      "messages": messages,
-      "stock_analysis_results": stock_analysis_results
+        "messages": messages,
+        "stock_analysis_results": stock_analysis_results
     }
     
+
+async def analyze_single_stock(
+    state: AgentState, 
+    stock_code: str, 
+    config: RunnableConfig, 
+    writer: StreamWriter | None = None
+) -> tuple[str, str]:
+    """分析单只股票的异步任务函数"""
+    stock_info = state["stock_dict"][stock_code]
+    task = Task(f"analyze {stock_code}", writer)
+    
+    try:
+        # 启动任务
+        start_time = time.time()
+        task.start(data={"stock_code": stock_code, "stock_name": stock_info.name})
+        
+     
+        prompt = build_single_stock_llm_judge_prompt(state, stock_code)
+        
+        # 调用LLM进行分析
+        # task.write_data(data={"status": "正在进行AI分析..."})
+        model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
+        hidden_config = config.copy() if config else {}
+        hidden_config["tags"] = hidden_config.get("tags", []) + ["skip_stream"]
+        response = await model.ainvoke([HumanMessage(content=prompt)], hidden_config)
+        
+        # 完成任务
+        # result_summary = response.content[:100] + "..." if len(response.content) > 100 else response.content
+        end_time = time.time()
+        task.finish(
+            result="success", 
+            data={
+                "stock_code": stock_code,
+                "analysis_cost_time": round(end_time - start_time, 2),
+                # "analysis_summary": result_summary,
+                # "full_analysis": response.content
+            }
+        )
+        
+        return stock_code, response.content
+        
+    except Exception as e:
+        # 任务失败
+        task.finish(
+            result="error", 
+            data={
+                "stock_code": stock_code,
+                "error": str(e)
+            }
+        )
+        return stock_code, f"分析失败: {str(e)}"
+
 
 def build_single_stock_llm_judge_prompt(state: AgentState, stock_code: str) -> str:
     basic_info = state["stock_dict"][stock_code]
@@ -118,16 +184,31 @@ def build_single_stock_llm_judge_prompt(state: AgentState, stock_code: str) -> s
     prompt = TRADE_PROMPTS["single_stock_llm_judge"].format(basic_info=basic_info, daily_items=daily_items)
     return prompt
 
+async def compare_stock_analysis_results_node(state: AgentState, config: RunnableConfig, writer: StreamWriter) -> Command[Literal["__end__"]]:
+    stock_analysis_results = state["stock_analysis_results"]
+    prompt = await build_compare_stock_analysis_results_prompt(state, stock_analysis_results)
+    model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
+    response = await model.ainvoke([HumanMessage(content=prompt)])
+    return {
+        "messages": [AIMessage(content=response.content)]
+    }
+
+async def build_compare_stock_analysis_results_prompt(state: AgentState, stock_analysis_results: dict[str, str]) -> str:
+    prompt = TRADE_PROMPTS["compare_stock_analysis_results"].format(stock_analysis_results=stock_analysis_results)
+    return prompt
+
 
 agent = StateGraph(AgentState)
 agent.add_node("stock_pool_node", stock_pool_node)
 agent.add_node("process_stock_items_node", process_stock_items_node)
 agent.add_node("judge_via_llm_node", judge_via_llm_node)
+agent.add_node("compare_stock_analysis_results_node", compare_stock_analysis_results_node)
 
 agent.add_edge(START, "stock_pool_node")
 agent.add_edge("stock_pool_node", "process_stock_items_node")
 agent.add_edge("process_stock_items_node", "judge_via_llm_node")
-agent.add_edge("judge_via_llm_node", END)
+agent.add_edge("judge_via_llm_node", "compare_stock_analysis_results_node")
+agent.add_edge("compare_stock_analysis_results_node", END)
 
 trading_agent = agent.compile()
 
