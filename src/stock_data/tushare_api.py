@@ -25,10 +25,7 @@ from dotenv import load_dotenv, find_dotenv
 
 
 env_path = find_dotenv()
-print(f"env_path: {env_path}")
 load_dotenv(env_path)
-token = os.getenv("TUSHARE_TOKEN")
-print(f"token: {token}")
 
 
 

@@ -66,6 +66,7 @@ dependencies = [
     "plotly>=5.17.0",
     "pyecharts>=2.0.0",
     "streamlit-echarts>=0.4.0",
+    "akshare>=1.17.63",
 ]
 
 [dependency-groups]
