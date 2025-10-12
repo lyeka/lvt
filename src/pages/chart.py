@@ -148,6 +148,9 @@ def create_kline_chart(df: pd.DataFrame, stock_code: str, show_volume: bool = Tr
                 title=f"{stock_code} Kline Chart",
                 pos_left="0"
             ),
+            legend_opts=opts.LegendOpts(
+                is_show=True, pos_top=10, pos_left="center"
+            ),
             xaxis_opts=opts.AxisOpts(
                 type_="category",
                 is_scale=True,
@@ -227,7 +230,7 @@ def create_kline_chart(df: pd.DataFrame, stock_code: str, show_volume: bool = Tr
             Bar(init_opts=opts.InitOpts(width="100%", height="150px"))
             .add_xaxis(xaxis_data=dates)
             .add_yaxis(
-                series_name="成交量",
+                series_name="Volume",
                 y_axis=volume_data,
                 xaxis_index=1,
                 yaxis_index=1,
@@ -237,6 +240,9 @@ def create_kline_chart(df: pd.DataFrame, stock_code: str, show_volume: bool = Tr
                 ),
             )
             .set_global_opts(
+                legend_opts=opts.LegendOpts(
+                    is_show=True, pos_bottom=10, pos_left="center"
+                ),
                 xaxis_opts=opts.AxisOpts(
                     type_="category",
                     grid_index=1,

@@ -1,28 +1,38 @@
 import streamlit as st
+from pyecharts import options as opts
+from pyecharts.charts import Liquid
+from streamlit_echarts import st_pyecharts
 
 st.set_page_config(
     page_title="Hello",
     page_icon="👋",
 )
 
-st.write("# Welcome to Streamlit! 👋")
+st.write("# Welcome to TVL! 👋")
 
 st.sidebar.success("Select a demo above.")
 
+
 st.markdown(
     """
-    Streamlit is an open-source app framework built specifically for
-    Machine Learning and Data Science projects.
-    **👈 Select a demo from the sidebar** to see some examples
-    of what Streamlit can do!
-    ### Want to learn more?
-    - Check out [streamlit.io](https://streamlit.io)
-    - Jump into our [documentation](https://docs.streamlit.io)
-    - Ask a question in our [community
-        forums](https://discuss.streamlit.io)
-    ### See more complex demos
-    - Use a neural net to [analyze the Udacity Self-driving Car Image
-        Dataset](https://github.com/streamlit/demo-self-driving)
-    - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
+    ### 支持执行下面功能
+    - trade analysis：选股器 -> LLM 分析 -> 交易决策
+    - chart：单股K线图 -> LLM 分析 -> 交易决策
+    - Sector Analysis：板块分析 -> LLM 分析 -> 交易决策
+    - Report： 报告归档
 """
 )
+
+def create_liquid_chart():
+    c = (
+        Liquid()
+        .add("lq", [0.6, 0.7])
+        .set_global_opts()
+    )
+    return c
+
+try:
+    chart = create_liquid_chart()
+    st_pyecharts(chart, height="400px", key="liquid_chart")
+except Exception as e:
+    st.error(f"Liquid chart rendering failed: {e}")
