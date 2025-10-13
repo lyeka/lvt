@@ -36,7 +36,7 @@ class AgentState(MessagesState):
     stock_analysis_results: dict[str, str]
 
 
-def write_analysis_report(stock_code: str, stock_name: str, analysis_content: str) -> None:
+def write_analysis_report(stock_code: str, stock_name: str, analysis_content: str, prompt: str | None = None) -> None:
     """
     将股票分析报告写入文件
     
@@ -63,16 +63,21 @@ def write_analysis_report(stock_code: str, stock_name: str, analysis_content: st
         # 生成报告内容
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         report_content = f"""# {stock_name} ({stock_code}) 分析报告
-
-**分析时间**: {timestamp}
-
-## 股票基本信息
-- **股票代码**: {stock_code}
-- **股票名称**: {stock_name}
-
-## AI 分析结果
+| analysis_time | stock_code | stock_name |
+|------|-----|-----|
+| {timestamp} | {stock_code} | {stock_name} |
+---
 
 {analysis_content}
+
+---
+<details >
+<summary>📘 分析 prompt</summary>
+
+```markdown
+{prompt if prompt else "None"}
+```
+</details>
 
 ---
 *本报告由 AI 自动生成，仅供参考，不构成投资建议*
@@ -205,7 +210,7 @@ async def analyze_single_stock(
 
         # 写入分析报告文件
         task.write_data(data={"status": "正在写入分析报告..."})
-        write_analysis_report(stock_code, stock_info.name, response.content)
+        write_analysis_report(stock_code, stock_info.name, response.content, prompt)
         
         # 完成任务
         # result_summary = response.content[:100] + "..." if len(response.content) > 100 else response.content
