@@ -26,6 +26,14 @@ class StockSelectionStrategy(Enum):
     EASTV1 = "e_v1"
     EASTV2 = "e_v2"
 
+def get_stock_selection_strategy_description(strategy_code: str) -> StockSelectionStrategy:
+    if strategy_code == StockSelectionStrategy.EASTV1:
+        return "不要科创板;不要创业板;不要北交所;不要ST股及不要退市股;向上突破60日线;市盈率(TTM)0-500;总市值>50亿;人气排名上升;股吧人气排名前1000名;净资产收益率ROE(加权)>0%;"
+    elif strategy_code == StockSelectionStrategy.EASTV2:
+        return "不要科创板;不要创业板;不要北交所;不要ST股及不要退市股;向上突破60日线;市盈率(TTM)0-500;总市值>50亿;人气排名上升;股吧人气排名前1000名;净资产收益率ROE(加权)>0%;"
+    else:
+        raise ValueError(f"Invalid stock selection strategy: {strategy_code}")
+
 
 
 
@@ -110,7 +118,7 @@ def stock_pool_node(state: AgentState, config: RunnableConfig) -> Command[Litera
     stock_dict = {}
     if strategy == StockSelectionStrategy.EASTV1:
         result = get_ma60_stocks_structured()
-        stock_dict = {stock_item.code+"."+stock_item.market: stock_item for stock_item in result.items[:3]} # 测试用，只取三个
+        stock_dict = {stock_item.code+"."+stock_item.market: stock_item for stock_item in result.items[:]}
     # elif strategy == StockSelectionStrategy.EASTV2:
     
     return {
@@ -244,8 +252,8 @@ async def analyze_single_stock(
 def build_single_stock_llm_judge_prompt(state: AgentState, stock_code: str) -> str:
     basic_info = state["stock_dict"][stock_code]
     daily_items = state["stock_daily_items"][stock_code][:60]
-
-    prompt = TRADE_PROMPTS["single_stock_llm_judge"].format(basic_info=basic_info, daily_items=daily_items)
+    stock_selection_strategy_description = get_stock_selection_strategy_description(state["stock_selection_strategy"])
+    prompt = TRADE_PROMPTS["single_stock_llm_judge_v2"].format(stock_selection_strategy=stock_selection_strategy_description, basic_info=basic_info, daily_items=daily_items)
     return prompt
 
 async def compare_stock_analysis_results_node(state: AgentState, config: RunnableConfig, writer: StreamWriter) -> Command[Literal["__end__"]]:
