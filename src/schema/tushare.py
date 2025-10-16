@@ -18,6 +18,10 @@ class TushareDailyItem(BaseModel):
     pct_chg: float | None = Field(default=None, description="Change percent")
     vol: float | None = Field(default=None, description="Volume (hands)")
     amount: float | None = Field(default=None, description="Amount (thousand CNY)")
+    # ma5: float | None = Field(default=None, description="5-day moving average")
+    # ma10: float | None = Field(default=None, description="10-day moving average")
+    # ma20: float | None = Field(default=None, description="20-day moving average")
+    # ma60: float | None = Field(default=None, description="60-day moving average")
 
 
 class TushareDailyResult(BaseModel):

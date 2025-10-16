@@ -176,7 +176,60 @@ def get_a_daily_structured(
         raise
 
     items = [TushareDailyItem(**rec) for rec in records]
+    # items = calculate_ma(items)
     return TushareDailyResult(trade_date=trade_date, ts_code=ts_code, total=len(items), items=items)
+
+# def calculate_ma(daily_items: list[TushareDailyItem]) -> list[TushareDailyItem]:
+#     """为同一 `ts_code` 的时间序列计算 MA 指标，并回填到 items 中。
+
+#     注意：当入参为某个交易日的全市场快照（只有单天、包含多个 ts_code）时，
+#     因缺少时间序列上下文，不计算均线（将保持为 None）。
+#     """
+#     if not daily_items:
+#         return daily_items
+
+#     # 延迟导入，避免在无需要的路径上引入依赖。
+#     import pandas as pd  # type: ignore
+
+#     # 以 ts_code 分组，各自按 trade_date 升序计算滚动均值。
+#     from collections import defaultdict
+
+#     groups: dict[str, list[tuple[int, TushareDailyItem]]] = defaultdict(list)
+#     for idx, it in enumerate(daily_items):
+#         # 没有 ts_code 的记录无法建立时间序列上下文，直接跳过
+#         if not it.ts_code:
+#             continue
+#         groups[it.ts_code].append((idx, it))
+
+#     for _, pairs in groups.items():
+#         # 构建 DataFrame 并按日期升序排列，保证 rolling 的时间顺序正确
+#         df = pd.DataFrame(
+#             {
+#                 "idx": [p[0] for p in pairs],
+#                 "trade_date": [p[1].trade_date for p in pairs],
+#                 "close": [p[1].close for p in pairs],
+#             }
+#         )
+#         # 将字符串日期按 YYYYMMDD 的字典序升序排列即可满足时间顺序
+#         df = df.sort_values("trade_date", ascending=True)
+
+#         # 计算滚动均线；使用默认 min_periods=window，前期不足周期得到 NaN
+#         close_series = pd.to_numeric(df["close"], errors="coerce")
+#         df["ma5"] = close_series.rolling(window=5).mean()
+#         df["ma10"] = close_series.rolling(window=10).mean()
+#         df["ma20"] = close_series.rolling(window=20).mean()
+#         df["ma60"] = close_series.rolling(window=60).mean()
+
+#         # 回填到对应的 BaseModel 实例；NaN 转为 None
+#         for _, row in df.iterrows():
+#             item = daily_items[int(row["idx"])]
+#             item.ma5 = None if pd.isna(row["ma5"]) else float(row["ma5"])  # type: ignore[assignment]
+#             item.ma10 = None if pd.isna(row["ma10"]) else float(row["ma10"])  # type: ignore[assignment]
+#             item.ma20 = None if pd.isna(row["ma20"]) else float(row["ma20"])  # type: ignore[assignment]
+#             item.ma60 = None if pd.isna(row["ma60"]) else float(row["ma60"])  # type: ignore[assignment]
+
+#     return daily_items
+
 
 
 if __name__ == "__main__":
@@ -204,7 +257,7 @@ if __name__ == "__main__":
         for i, it in enumerate(res.items[:10], 1):
             print(
                 # it
-                f"{i:2d}. {it.ts_code} {it.trade_date} 收盘:{fmt(it.close)} 涨跌幅:{fmt(it.pct_chg)}% 成交量:{fmt(it.vol)}"
+                f"{i:2d}. {it.ts_code} {it.trade_date} 收盘:{fmt(it.close)} 涨跌幅:{fmt(it.pct_chg)}% 成交量:{fmt(it.vol)} 5日:{fmt(it.ma5)} 10日:{fmt(it.ma10)} 20日:{fmt(it.ma20)} 60日:{fmt(it.ma60)}"
             )
     except Exception as e:  # noqa: BLE001
         print(f"执行失败: {e}")

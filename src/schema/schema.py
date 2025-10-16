@@ -3,7 +3,7 @@ from typing import Any, Literal, NotRequired
 from pydantic import BaseModel, Field, SerializeAsAny
 from typing_extensions import TypedDict
 
-from schema.models import AllModelEnum, AnthropicModelName, OpenAIModelName
+from schema.models import AllModelEnum, AnthropicModelName, OpenAIModelName, DeepseekModelName
 
 
 class AgentInfo(BaseModel):
@@ -47,7 +47,7 @@ class UserInput(BaseModel):
     model: SerializeAsAny[AllModelEnum] | None = Field(
         title="Model",
         description="LLM Model to use for the agent. Defaults to the default model set in the settings of the service.",
-        default=None,
+        default=DeepseekModelName.DEEPSEEK_REASONER,
         examples=[OpenAIModelName.GPT_4O_MINI, AnthropicModelName.HAIKU_35],
     )
     thread_id: str | None = Field(

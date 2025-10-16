@@ -43,14 +43,18 @@ class AgentState(MessagesState):
     stock_daily_items: dict[str, list[TushareDailyItem]] 
     stock_analysis_results: dict[str, str]
 
+class ReportType(Enum):
+    SingleStock = "single_stock"
+    CompareStock = "compare_stock"
 
-def write_analysis_report(stock_code: str, stock_name: str, analysis_content: str, prompt: str | None = None) -> None:
+
+def write_analysis_report(report_type: ReportType, report_name: str, analysis_content: str, *args, **kwargs) -> None:
     """
     将股票分析报告写入文件
     
     Args:
-        stock_code: 股票代码 (如 000001.SZ)
-        stock_name: 股票名称
+        report_type: 报告类型
+        report_name: 报告名称
         analysis_content: 分析内容
     """
     try:
@@ -62,25 +66,25 @@ def write_analysis_report(stock_code: str, stock_name: str, analysis_content: st
         today = datetime.now().strftime("%Y%m%d")
         
         # 创建报告目录
-        report_dir = project_root / "report" / today
+        report_dir = project_root / "report" / report_type.value / today
         report_dir.mkdir(parents=True, exist_ok=True)
         
         # 生成文件路径
-        report_file = report_dir / f"{stock_code}.md"
+        report_file = report_dir / f"{report_name}.md"
+        prompt = kwargs.get("prompt", None)
         
         # 生成报告内容
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        report_content = f"""# {stock_name} ({stock_code}) 分析报告
-| analysis_time | stock_code | stock_name |
-|------|-----|-----|
-| {timestamp} | {stock_code} | {stock_name} |
+        metadata = get_report_metadata(report_type, report_name, *args, **kwargs)
+        report_content = f"""
+{metadata}
+
 ---
 
 {analysis_content}
 
 ---
 <details >
-<summary>📘 分析 prompt</summary>
+<summary>📘 analysis prompt</summary>
 
 ```markdown
 {prompt if prompt else "None"}
@@ -97,9 +101,31 @@ def write_analysis_report(stock_code: str, stock_name: str, analysis_content: st
             
     except Exception as e:
         # 静默处理文件写入错误，不影响主流程
-        print(f"写入分析报告失败 {stock_code}: {str(e)}")
+        print(f"写入分析报告失败 {report_name}: {str(e)}")
 
 
+def get_report_metadata(report_type: ReportType, report_name: str, *args, **kwargs) -> str:
+    metadata = ""
+    if report_type == ReportType.SingleStock:
+        stock_code = kwargs.get("stock_code", "")
+        stock_name = kwargs.get("stock_name", "")
+        stock_selection_strategy = kwargs.get("stock_selection_strategy", "")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        metadata = f"""
+| analysis_time | stock_code | stock_name | stock_selection_strategy |
+|------|-----|-----|-----|
+| {timestamp} | {stock_code} | {stock_name} | {stock_selection_strategy} |
+"""
+    elif report_type == ReportType.CompareStock:
+        stock_selection_strategy = kwargs.get("stock_selection_strategy", "")
+        total_stock_count = kwargs.get("total_stock_count", 0)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        metadata = f"""
+| analysis_time | stock_selection_strategy | total_stock_count |
+|------|-----|-----|
+| {timestamp} | {stock_selection_strategy} | {total_stock_count} |
+"""
+    return metadata
 
 
 
@@ -141,9 +167,6 @@ def process_stock_items_node(state: AgentState, config: RunnableConfig) -> Comma
       "stock_daily_items": stock_daily_items,
     }
 
-
-
-
 async def judge_via_llm_node(state: AgentState, config: RunnableConfig, writer: StreamWriter):
     """使用后台任务并发分析多只股票"""
     stock_dict = state["stock_dict"]
@@ -182,7 +205,7 @@ async def judge_via_llm_node(state: AgentState, config: RunnableConfig, writer: 
                 successful_analyses += 1
     
     # 添加总结消息
-    summary_msg = f"股票分析完成: 成功 {successful_analyses} 只，失败 {failed_analyses} 只"
+    summary_msg = f"个股分析完成: 成功 {successful_analyses} 只，失败 {failed_analyses} 只"
     messages.append(AIMessage(content=summary_msg))
         
     return {
@@ -218,7 +241,13 @@ async def analyze_single_stock(
 
         # 写入分析报告文件
         task.write_data(data={"status": "正在写入分析报告..."})
-        write_analysis_report(stock_code, stock_info.name, response.content, prompt)
+        report_name = f"{stock_code}_{stock_info.name}"
+        write_analysis_report(ReportType.SingleStock, report_name, response.content, 
+            stock_code=stock_code, 
+            stock_name=stock_info.name, 
+            prompt=prompt, 
+            stock_selection_strategy=state["stock_selection_strategy"]
+        )
         
         # 完成任务
         # result_summary = response.content[:100] + "..." if len(response.content) > 100 else response.content
@@ -258,9 +287,20 @@ def build_single_stock_llm_judge_prompt(state: AgentState, stock_code: str) -> s
 
 async def compare_stock_analysis_results_node(state: AgentState, config: RunnableConfig, writer: StreamWriter) -> Command[Literal["__end__"]]:
     stock_analysis_results = state["stock_analysis_results"]
+    start_time = time.time()
+    task = Task("compare_stock_analysis_results", writer)
+    task.start(data={"total_stock_count": len(stock_analysis_results)})
     prompt = await build_compare_stock_analysis_results_prompt(state, stock_analysis_results)
     model = get_model(config["configurable"].get("model", settings.DEFAULT_MODEL))
     response = await model.ainvoke([HumanMessage(content=prompt)])
+    task.write_data(data={"status": "正在写入分析报告..."})
+    report_name = f"compare_stock_analysis_results_{datetime.now().strftime('%H%M%S')}"
+    write_analysis_report(ReportType.CompareStock, report_name, response.content, 
+        prompt=prompt,
+        stock_selection_strategy=state["stock_selection_strategy"],
+        total_stock_count=len(stock_analysis_results)
+    )
+    task.finish(result="success", data={"analysis_cost_time": round(time.time() - start_time, 2)})
     return {
         "messages": [AIMessage(content=response.content)]
     }
