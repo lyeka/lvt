@@ -67,6 +67,8 @@ dependencies = [
     "pyecharts>=2.0.0",
     "streamlit-echarts>=0.4.0",
     "akshare>=1.17.63",
+    "apscheduler>=3.10.4",
+    "PyYAML>=6.0.2",
 ]
 
 [dependency-groups]

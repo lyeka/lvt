@@ -1,0 +1,23 @@
+scheduler:
+  tasks:
+    - name: "每日选股分析"
+      description: "每天早上9点执行选股分析"
+      enabled: true
+      cron: "0 9 * * *"
+      agent: "trading-agent"
+      prompt: "/e_v1"
+      model: "deepseek-chat"
+      parameters:
+        market: "A股"
+        strategy: "价值投资"
+
+    - name: "持仓监控"
+      description: "每30分钟检查持仓情况"
+      enabled: false
+      cron: "*/30 * * * *"
+      agent: "bg-task-agent"
+      prompt: "/monitor_v1"
+      model: "gpt-4o-mini"
+      parameters:
+        alert_threshold: 0.05
+
