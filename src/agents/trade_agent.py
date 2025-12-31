@@ -16,7 +16,7 @@ from core import get_model, settings
 from schema.stock import StockItem
 from schema.tushare import TushareDailyItem
 from stock_data.east import get_ma60_stocks_structured
-from stock_data.tushare_api import get_a_daily_structured
+from stock_data.tushare_api import TushareClient
 
 
 class StockSelectionStrategy(Enum):
@@ -157,10 +157,10 @@ def process_stock_items_node(state: AgentState, config: RunnableConfig) -> Comma
 
     stock_dict = state["stock_dict"]
     stock_daily_items = state.get("stock_daily_items", {})
-    
 
+    client = TushareClient()
     for stock_code in stock_dict.keys():
-        result = get_a_daily_structured(ts_code=stock_code)
+        result = client.daily(ts_code=stock_code)
         stock_daily_items[stock_code] = result.items
 
     return { 
