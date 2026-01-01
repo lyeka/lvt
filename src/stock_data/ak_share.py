@@ -1,51 +1,126 @@
+#!/usr/bin/env python3
+"""
+AkShare 数据客户端
+==================
+
+依赖: akshare (pip install akshare)
+"""
+
 from __future__ import annotations
 
+import logging
+
 import akshare as ak
-import pandas as pd
+
+from schema.akshare import (
+    IndustryBoardItem,
+    IndustryBoardsResult,
+    IndustryConstituentItem,
+    IndustryConstituentsResult,
+    SectorFundFlowItem,
+    SectorFundFlowResult,
+)
+
+__all__ = ["AkShareClient", "AkShareError"]
+
+logger = logging.getLogger(__name__)
 
 
-class AkShareStockData:
+class AkShareError(Exception):
+    """AkShare API 异常基类。"""
+
+
+class AkShareClient:
     """
-    封装对 akshare 行业板块相关接口的简单调用。
+    AkShare API 客户端。
 
-    - `get_industry_boards`: 获取行业板块列表
-    - `get_industry_constituents`: 获取指定行业板块的成分股
+    Example:
+        >>> client = AkShareClient()
+        >>> result = client.industry_boards()
+        >>> print(f"共 {result.total} 个行业板块")
     """
 
-    @classmethod
-    def get_industry_boards(cls) -> pd.DataFrame:
-        """获取东方财富行业板块列表。"""
-        return ak.stock_board_industry_name_em()
-
-    @classmethod
-    def get_industry_constituents(cls, symbol: str) -> pd.DataFrame:
-        """获取指定行业板块的成分股。
-
-        参数
-        - symbol: 行业板块代码，例如 "BK0457"
+    def industry_boards(self) -> IndustryBoardsResult:
         """
-        return ak.stock_board_industry_cons_em(symbol=symbol)
+        获取东方财富行业板块列表。
 
-    @classmethod
-    def stock_sector_fund_flow_rank(cls, indicator: str,sector_type: str) -> pd.DataFrame:
+        Returns:
+            行业板块列表数据。
         """
-        args:
-            indicator: 默认="今日"; choice of {"今日", "5日", "10日"}
-            sector_type: 默认="行业资金流"; choice of {"行业资金流", "概念资金流", "地域资金流"}
+        logger.info("获取行业板块列表")
+        try:
+            df = ak.stock_board_industry_name_em()
+        except Exception as e:
+            raise AkShareError(f"获取行业板块列表失败: {e}") from e
 
+        # 根据实际返回字段映射
+        items = []
+        for _, row in df.iterrows():
+            # akshare 返回的字段可能是中文，需要映射
+            items.append(
+                IndustryBoardItem(
+                    board_code=str(row.get("板块代码", row.iloc[0])),
+                    board_name=str(row.get("板块名称", row.iloc[1])),
+                )
+            )
+
+        return IndustryBoardsResult(total=len(items), items=items)
+
+    def industry_constituents(self, symbol: str) -> IndustryConstituentsResult:
         """
-        return ak.stock_sector_fund_flow_rank(indicator=indicator,sector_type=sector_type)
+        获取指定行业板块的成分股。
 
+        Args:
+            symbol: 板块代码，如 "BK0457"。
 
-if __name__ == "__main__":
-    # 示例：打印前 5 条行业板块与指定板块成分股情况
-    industry_boards = AkShareStockData.get_industry_boards()
-    print(len(industry_boards))
+        Returns:
+            行业成分股数据。
+        """
+        logger.info("获取行业成分股: symbol=%s", symbol)
+        try:
+            df = ak.stock_board_industry_cons_em(symbol=symbol)
+        except Exception as e:
+            raise AkShareError(f"获取行业成分股失败: {e}") from e
 
-    # cons = AkShareStockData.get_industry_constituents(symbol="BK0457")
-    # print(len(cons))
-    # print(cons[:5])
+        items = []
+        for _, row in df.iterrows():
+            items.append(
+                IndustryConstituentItem(
+                    stock_code=str(row.get("代码", row.iloc[0])),
+                    stock_name=str(row.get("名称", row.iloc[1])),
+                )
+            )
 
-    # fund_flow = AkShareStockData.stock_sector_fund_flow_rank(indicator="今日",sector_type="行业资金流")
-    # print(fund_flow[:5])
+        return IndustryConstituentsResult(symbol=symbol, total=len(items), items=items)
 
+    def sector_fund_flow_rank(
+        self, indicator: str = "今日", sector_type: str = "行业资金流"
+    ) -> SectorFundFlowResult:
+        """
+        获取板块资金流排名。
+
+        Args:
+            indicator: 指标周期，可选 "今日"、"5日"、"10日"。
+            sector_type: 板块类型，可选 "行业资金流"、"概念资金流"、"地域资金流"。
+
+        Returns:
+            板块资金流排名数据。
+        """
+        logger.info("获取板块资金流: indicator=%s, sector_type=%s", indicator, sector_type)
+        try:
+            df = ak.stock_sector_fund_flow_rank(indicator=indicator, sector_type=sector_type)
+        except Exception as e:
+            raise AkShareError(f"获取板块资金流失败: {e}") from e
+
+        items = []
+        for idx, row in df.iterrows():
+            items.append(
+                SectorFundFlowItem(
+                    sector_name=str(row.get("名称", row.iloc[0])),
+                    rank=int(idx) + 1,  # 使用索引作为排名
+                )
+            )
+
+        return SectorFundFlowResult(
+            indicator=indicator, sector_type=sector_type, total=len(items), items=items
+        )
