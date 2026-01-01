@@ -14,7 +14,12 @@ import os
 
 import tushare as ts
 
-from schema.tushare import TushareDailyItem, TushareDailyResult
+from schema.tushare import (
+    TushareCyqPerfItem,
+    TushareCyqPerfResult,
+    TushareDailyItem,
+    TushareDailyResult,
+)
 
 __all__ = ["TushareClient", "TushareError"]
 
@@ -80,6 +85,52 @@ class TushareClient:
         return TushareDailyResult(
             ts_code=ts_code,
             trade_date=trade_date,
+            total=len(items),
+            items=items,
+        )
+
+    def cyq_perf(
+        self,
+        ts_code: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> TushareCyqPerfResult:
+        """
+        获取每日筹码及胜率数据。
+
+        Args:
+            ts_code: TS 代码，如 "600000.SH"（必填）。
+            start_date: 开始日期，格式 YYYYMMDD。默认为最近60天。
+            end_date: 结束日期，格式 YYYYMMDD。默认为今天。
+
+        Returns:
+            结构化的筹码分布及胜率数据。
+        """
+        from datetime import datetime, timedelta
+
+        # 默认日期处理
+        if end_date is None:
+            end_date = datetime.now().strftime("%Y%m%d")
+        if start_date is None:
+            start_date = (datetime.now() - timedelta(days=60)).strftime("%Y%m%d")
+
+        logger.info(
+            "获取筹码分布: ts_code=%s, start_date=%s, end_date=%s",
+            ts_code,
+            start_date,
+            end_date,
+        )
+        try:
+            df = self._pro.cyq_perf(ts_code=ts_code, start_date=start_date, end_date=end_date)
+        except Exception as e:
+            raise TushareError(f"获取筹码分布失败: {e}") from e
+
+        records = df.to_dict("records") if df is not None else []
+        items = [TushareCyqPerfItem(**rec) for rec in records]
+        return TushareCyqPerfResult(
+            ts_code=ts_code,
+            start_date=start_date,
+            end_date=end_date,
             total=len(items),
             items=items,
         )
