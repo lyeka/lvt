@@ -1,3 +1,12 @@
+"""
+[INPUT]: 依赖 uvicorn 的 ASGI 服务器
+         依赖 core.settings 的配置
+         依赖 service.app 的 FastAPI 应用 (通过 "service:app" 字符串引用)
+[OUTPUT]: 无导出，作为入口点直接运行
+[POS]: 项目入口点 - FastAPI 服务启动器，配置日志和事件循环
+       运行方式: python src/run_service.py
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import asyncio
 import logging
 import sys

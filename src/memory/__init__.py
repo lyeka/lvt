@@ -1,3 +1,13 @@
+"""
+[INPUT]: 依赖 langgraph.checkpoint.* 的各数据库 Saver 类
+         依赖 core.settings 的 DatabaseType 和 settings
+         依赖 memory.sqlite/postgres/mongodb 的具体实现
+[OUTPUT]: 对外提供 initialize_database() → AsyncContextManager[Saver]
+          initialize_store() → AsyncContextManager[Store]
+[POS]: memory/ 的入口模块，根据配置选择数据库后端
+       被 service.service.py 的 lifespan 调用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from contextlib import AbstractAsyncContextManager
 
 from langgraph.checkpoint.mongodb.aio import AsyncMongoDBSaver

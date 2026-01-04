@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
+[INPUT]: 依赖 requests 的 HTTP 客户端
+         依赖 schema.stock 的 StockItem, StockScanResult
+[OUTPUT]: 对外提供 EastMoneyAPI 类
+          StockFilter, RequestConfig 配置类
+          get_ma60_stocks(), get_ma60_stocks_structured() 便捷函数
+[POS]: stock_data/ 的东方财富数据源，提供 MA60 突破等选股扫描
+       被 agents.trade_agent 调用获取股票池
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+
 东方财富选股API封装
 ===================
 

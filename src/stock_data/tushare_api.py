@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 """
+[INPUT]: 依赖 tushare 的 Pro API
+         依赖 schema.tushare 的 TushareDailyItem, TushareCyqPerfItem 等类型
+         环境变量: TUSHARE_TOKEN
+[OUTPUT]: 对外提供 TushareClient 类 (daily, cyq_perf 方法)
+          TushareError 异常类
+[POS]: stock_data/ 的 TuShare 数据源，提供日线行情和筹码分布数据
+       被 agents.trade_agent 调用获取股票历史数据
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+
 Tushare A股数据客户端
 ====================
 

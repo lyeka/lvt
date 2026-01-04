@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 langchain_core 的 LLM 和消息类型
+         依赖 langgraph 的 StateGraph, StreamWriter
+         依赖 agents.bg_task_agent.task 的 Task
+         依赖 core 的 get_model, settings
+[OUTPUT]: 对外提供 bg_task_agent (CompiledStateGraph)
+          AgentState, wrap_model(), acall_model(), bg_task()
+[POS]: bg_task_agent/ 的核心 agent，演示后台任务进度流式输出
+       在 agents.agents 中注册
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import asyncio
 
 from langchain_core.language_models.chat_models import BaseChatModel

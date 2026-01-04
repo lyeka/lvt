@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 langchain_core 的 HumanMessage, RunnableConfig
+         依赖 agents 的 get_agent
+         依赖 core 的 settings
+         依赖 schema.models 的 AllModelEnum
+[OUTPUT]: 对外提供 AgentExecutor 类 (execute, aexecute)
+          ExecutionRecord 数据类 (任务执行状态)
+[POS]: scheduler/ 的执行器，负责实际调用 agent 并记录执行结果
+       被 scheduler.scheduler.TaskScheduler 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from __future__ import annotations
 
 import asyncio

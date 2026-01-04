@@ -1,3 +1,16 @@
+"""
+[INPUT]: 依赖 pydantic 的 BaseModel, Field
+         依赖 schema.models 的 AllModelEnum 及具体模型枚举
+[OUTPUT]: 对外提供 API 契约类型:
+          AgentInfo, ServiceMetadata (服务元数据)
+          UserInput, StreamInput (请求类型)
+          ChatMessage, ToolCall (消息类型)
+          Feedback, FeedbackResponse (反馈类型)
+          ChatHistoryInput, ChatHistory (历史记录)
+[POS]: schema/ 的核心 API 契约定义，被 service 和 client 共同使用
+       定义了前后端通信的所有数据结构
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from typing import Any, Literal, NotRequired
 
 from pydantic import BaseModel, Field, SerializeAsAny

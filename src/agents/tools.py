@@ -1,3 +1,15 @@
+"""
+[INPUT]: 依赖 numexpr 的数学表达式计算
+         依赖 langchain_chroma 的向量数据库
+         依赖 langchain_openai 的 OpenAIEmbeddings
+         依赖 langchain_core.tools 的 tool 装饰器
+[OUTPUT]: 对外提供 calculator (BaseTool) - 数学计算工具
+          database_search (BaseTool) - ChromaDB 搜索工具
+          format_contexts(), load_chroma_db() 辅助函数
+[POS]: agents/ 的工具集，提供 LLM 可调用的外部工具
+       可被任意 agent 绑定使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import math
 import re
 

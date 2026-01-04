@@ -1,3 +1,11 @@
+"""
+[INPUT]: 依赖 pydantic 的 BaseModel, Field
+[OUTPUT]: 对外提供 StockItem (单只股票数据)
+          StockScanResult (扫描结果集，含分页)
+[POS]: schema/ 的股票数据模型，定义 EastMoney 扫描结果的结构化类型
+       被 stock_data.east 和 agents.trade_agent 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from __future__ import annotations
 
 from pydantic import BaseModel, Field

@@ -1,3 +1,15 @@
+"""
+[INPUT]: 依赖 langgraph.checkpoint.postgres 的 AsyncPostgresSaver
+         依赖 langgraph.store.postgres 的 AsyncPostgresStore
+         依赖 psycopg_pool 的 AsyncConnectionPool
+         依赖 core.settings 的 settings
+[OUTPUT]: 对外提供 get_postgres_saver() → AsyncContextManager[AsyncPostgresSaver]
+          get_postgres_store() → AsyncContextManager[AsyncPostgresStore]
+          validate_postgres_config(), get_postgres_connection_string()
+[POS]: memory/ 的 PostgreSQL 后端实现，生产环境推荐
+       被 memory/__init__.py 调用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import logging
 from contextlib import asynccontextmanager
 

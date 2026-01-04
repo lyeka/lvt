@@ -1,3 +1,19 @@
+"""
+[INPUT]: 依赖 langchain_core 的消息类型 (AIMessage, HumanMessage)
+         依赖 langgraph 的 StateGraph, Command, StreamWriter
+         依赖 core 的 get_model, settings
+         依赖 stock_data.east 的 get_ma60_stocks_structured
+         依赖 stock_data.tushare_api 的 TushareClient
+         依赖 schema.stock 的 StockItem
+         依赖 schema.tushare 的 TushareDailyItem
+         依赖 agents.trade_prompts 的 TRADE_PROMPTS
+         依赖 agents.bg_task_agent.task 的 Task
+[OUTPUT]: 对外提供 trading_agent (CompiledStateGraph)
+          StockSelectionStrategy, AgentState, ReportType
+          write_analysis_report(), analyze_single_stock()
+[POS]: agents/ 的核心交易分析 agent，实现选股→数据采集→LLM分析→报告生成的完整流程
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import asyncio
 import time
 from datetime import datetime

@@ -1,3 +1,13 @@
+"""
+[INPUT]: 依赖 langchain_core.messages 的 AIMessage, HumanMessage, ToolMessage, BaseMessage
+         依赖 schema 的 ChatMessage
+[OUTPUT]: 对外提供 convert_message_content_to_string()
+          langchain_to_chat_message() - LangChain 消息转 API ChatMessage
+          remove_tool_calls() - 移除流式内容中的工具调用
+[POS]: service/ 的工具函数集，处理 LangChain 消息与 API 消息的转换
+       被 service.service.py 的 streaming 逻辑使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,

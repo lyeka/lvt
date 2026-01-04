@@ -1,3 +1,11 @@
+"""
+[INPUT]: 无外部依赖
+[OUTPUT]: 对外提供 TRADE_PROMPTS 字典
+          包含 single_stock_llm_judge_v2, compare_stock_analysis_results 等 prompt 模板
+[POS]: agents/ 的 prompt 模板库，存储交易分析所需的所有 LLM prompt
+       被 agents.trade_agent 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from typing import Any
 
 TRADE_PROMPTS: dict[str, Any] = {}

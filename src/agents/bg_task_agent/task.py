@@ -1,3 +1,15 @@
+"""
+[INPUT]: 依赖 langchain_core.messages 的 BaseMessage
+         依赖 langgraph.types 的 StreamWriter
+         依赖 agents.utils 的 CustomData
+         依赖 schema.task_data 的 TaskData
+[OUTPUT]: 对外提供 Task 类
+          状态机: new → running → complete
+          方法: start(), write_data(), finish()
+[POS]: bg_task_agent/ 的任务抽象，封装后台任务的状态管理和消息发送
+       被 bg_task_agent.py 和 trade_agent.py 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from typing import Literal
 from uuid import uuid4
 

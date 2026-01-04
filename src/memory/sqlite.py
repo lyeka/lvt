@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 langgraph.checkpoint.sqlite 的 AsyncSqliteSaver
+         依赖 langgraph.store.memory 的 InMemoryStore
+         依赖 core.settings 的 settings
+[OUTPUT]: 对外提供 get_sqlite_saver() → AsyncContextManager[AsyncSqliteSaver]
+          get_sqlite_store() → AsyncContextManager[InMemoryStore]
+          AsyncInMemoryStore 包装类
+[POS]: memory/ 的 SQLite 后端实现，默认开发环境使用
+       被 memory/__init__.py 调用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver

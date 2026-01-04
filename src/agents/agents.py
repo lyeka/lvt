@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 langgraph 的 CompiledStateGraph/Pregel 类型
+         依赖 agents.trade_agent 的 trading_agent
+         依赖 agents.bg_task_agent 的 bg_task_agent
+         依赖 agents.lazy_agent 的 LazyLoadingAgent
+         依赖 schema 的 AgentInfo
+[OUTPUT]: 对外提供 DEFAULT_AGENT, agents, get_agent(), get_all_agent_info(), load_agent()
+          类型别名 AgentGraph, AgentGraphLike
+[POS]: agents/ 的核心注册中心，所有 agent 在此注册，service 通过此模块获取 agent 实例
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from dataclasses import dataclass
 
 from langgraph.graph.state import CompiledStateGraph

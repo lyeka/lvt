@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 apscheduler 的 BackgroundScheduler, CronTrigger
+         依赖 scheduler.config 的配置加载函数
+         依赖 scheduler.executor 的 AgentExecutor
+[OUTPUT]: 对外提供 TaskScheduler 类
+          TaskRuntime 数据类
+          start/pause/shutdown, reload_config, trigger_task, get_tasks
+[POS]: scheduler/ 的核心调度器，管理 cron 任务的生命周期
+       被 streamlit pages/scheduler.py 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from __future__ import annotations
 
 import logging

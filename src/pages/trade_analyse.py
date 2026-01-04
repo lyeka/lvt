@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 streamlit 的 UI 组件
+         依赖 client 的 AgentClient
+         依赖 schema 的 ChatMessage, ChatHistory
+         依赖 schema.task_data 的 TaskData, TaskDataStatus
+[OUTPUT]: 无显式导出，作为 Streamlit 页面被自动发现
+          main(), draw_messages(), handle_feedback(), handle_sub_agent_msgs()
+[POS]: pages/ 的主交易分析页面，提供与 agent 交互的聊天界面
+       处理消息流式渲染、工具调用展示、反馈收集
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import asyncio
 import os
 import urllib.parse

@@ -1,3 +1,12 @@
+"""
+[INPUT]: 依赖 pydantic 的 BaseModel, Field, field_validator
+         依赖 yaml 的 safe_load
+[OUTPUT]: 对外提供 TaskConfig, TaskParameters, SchedulerSection, SchedulerConfig
+          load_scheduler_config(path) → SchedulerConfig
+[POS]: scheduler/ 的配置模块，定义任务配置的 Pydantic 模型并加载 YAML
+       被 scheduler.scheduler.TaskScheduler 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from __future__ import annotations
 
 from pathlib import Path

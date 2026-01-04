@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 streamlit 的 UI 框架
+         依赖 client 的 AgentClient
+         依赖 schema 的 ChatMessage, ChatHistory
+         依赖 schema.task_data 的 TaskData, TaskDataStatus
+[OUTPUT]: 无导出，作为 Streamlit 入口点运行
+          运行方式: streamlit run src/streamlit_app.py
+[POS]: 项目入口点 - Streamlit 前端应用主页
+       提供基础聊天界面，pages/ 下的文件自动注册为子页面
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import asyncio
 import os
 import urllib.parse

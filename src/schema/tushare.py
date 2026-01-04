@@ -1,3 +1,11 @@
+"""
+[INPUT]: 依赖 pydantic 的 BaseModel, Field
+[OUTPUT]: 对外提供 TushareDailyItem, TushareDailyResult (日线数据)
+          TushareCyqPerfItem, TushareCyqPerfResult (筹码分布数据)
+[POS]: schema/ 的 TuShare 数据模型，定义 TuShare API 响应的结构化类型
+       被 stock_data.tushare_api 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from __future__ import annotations
 
 from pydantic import BaseModel, Field

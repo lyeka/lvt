@@ -1,4 +1,14 @@
-"""Agent types with async initialization and dynamic graph creation."""
+"""
+[INPUT]: 依赖 langgraph 的 CompiledStateGraph, Pregel 类型
+[OUTPUT]: 对外提供 LazyLoadingAgent ABC
+          load() - 异步加载方法 (抽象)
+          get_graph() - 获取已加载的 graph
+[POS]: agents/ 的懒加载基类，用于需要异步初始化的 agent (如 MCP 连接)
+       被 github_mcp_agent 继承
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+
+Agent types with async initialization and dynamic graph creation.
+"""
 
 from abc import ABC, abstractmethod
 

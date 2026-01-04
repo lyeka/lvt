@@ -1,3 +1,19 @@
+"""
+[INPUT]: 依赖 fastapi 的 FastAPI, APIRouter, HTTPException
+         依赖 langchain_core 的消息类型和 RunnableConfig
+         依赖 langgraph 的 Command, Interrupt
+         依赖 langfuse/langsmith 的追踪回调
+         依赖 agents 的 get_agent, get_all_agent_info, load_agent, DEFAULT_AGENT
+         依赖 core 的 settings
+         依赖 memory 的 initialize_database, initialize_store
+         依赖 schema 的 ChatMessage, UserInput, StreamInput 等 API 类型
+         依赖 service.utils 的消息转换函数
+[OUTPUT]: 对外提供 app (FastAPI 实例)
+          端点: /info, /invoke, /stream, /history, /feedback, /health
+[POS]: service/ 的核心模块，FastAPI 应用定义与所有 REST 端点实现
+       被 run_service.py 导入启动
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import inspect
 import json
 import logging

@@ -1,3 +1,13 @@
+"""
+[INPUT]: 依赖 httpx 的同步/异步 HTTP 客户端
+         依赖 schema 的 ChatMessage, UserInput, StreamInput, ChatHistory 等
+[OUTPUT]: 对外提供 AgentClient 类
+          AgentClientError 异常类
+          同步/异步: invoke, stream, get_history, create_feedback
+[POS]: client/ 的核心模块，封装与 agent service 的所有 HTTP 通信
+       被 streamlit_app.py 和 pages/* 使用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 import json
 import os
 from collections.abc import AsyncGenerator, Generator

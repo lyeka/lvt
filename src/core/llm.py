@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 langchain_* 的各 LLM 客户端类
+         依赖 core.settings 的 settings 配置
+         依赖 schema.models 的所有 LLM 模型枚举
+[OUTPUT]: 对外提供 get_model(name) → ModelT (缓存的 LLM 实例)
+          ModelT 类型别名 (所有支持的 LLM 客户端联合类型)
+          FakeToolModel (测试用模型)
+[POS]: core/ 的 LLM 工厂，根据模型名返回对应的 LangChain LLM 实例
+       被 agents 和 scheduler 调用
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from functools import cache
 from typing import TypeAlias
 

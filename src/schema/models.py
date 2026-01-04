@@ -1,3 +1,13 @@
+"""
+[INPUT]: 无外部依赖，仅使用标准库 enum 和 typing
+[OUTPUT]: 对外提供所有 LLM 模型枚举:
+          Provider (提供商枚举)
+          OpenAIModelName, AnthropicModelName, GoogleModelName, etc.
+          AllModelEnum (所有模型的联合类型)
+[POS]: schema/ 的 LLM 模型定义，被 core/settings.py 和 core/llm.py 使用
+       定义了系统支持的所有 LLM 提供商和模型
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from enum import StrEnum, auto
 from typing import TypeAlias
 

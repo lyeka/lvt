@@ -1,3 +1,14 @@
+"""
+[INPUT]: 依赖 pydantic/pydantic_settings 的 BaseSettings, SecretStr
+         依赖 dotenv 的 find_dotenv
+         依赖 schema.models 的所有 LLM 模型枚举
+[OUTPUT]: 对外提供 settings (Settings 单例)
+          DatabaseType, LogLevel 枚举
+          Settings 类及其所有配置字段
+[POS]: core/ 的配置中心，所有环境变量在此定义，被全项目引用
+       model_post_init 自动检测可用 LLM 提供商
+[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+"""
 from enum import StrEnum
 from json import loads
 from typing import Annotated, Any
